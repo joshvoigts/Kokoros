@@ -53,19 +53,7 @@ impl TTSKoko {
         Self::from_config(model_path, voices_path, InitConfig::default()).await
     }
 
-    pub async fn from_config(model_path: &str, voices_path: &str, cfg: InitConfig) -> Self {
-        if !Path::new(model_path).exists() {
-            utils::fileio::download_file_from_url(cfg.model_url.as_str(), model_path)
-                .await
-                .expect("download model failed.");
-        }
-
-        if !Path::new(voices_path).exists() {
-            utils::fileio::download_file_from_url(cfg.voices_url.as_str(), voices_path)
-                .await
-                .expect("download voices data file failed.");
-        }
-
+    pub fn from_config_and_model(model_path: &str, voices_path: &str, cfg: InitConfig) -> Self {
         let model = Arc::new(
             ort_koko::OrtKoko::new(model_path.to_string())
                 .expect("Failed to create Kokoro TTS model"),
@@ -82,6 +70,22 @@ impl TTSKoko {
             styles,
             init_config: cfg,
         }
+    }
+
+    pub async fn from_config(model_path: &str, voices_path: &str, cfg: InitConfig) -> Self {
+        if !Path::new(model_path).exists() {
+            utils::fileio::download_file_from_url(cfg.model_url.as_str(), model_path)
+                .await
+                .expect("download model failed.");
+        }
+
+        if !Path::new(voices_path).exists() {
+            utils::fileio::download_file_from_url(cfg.voices_url.as_str(), voices_path)
+                .await
+                .expect("download voices data file failed.");
+        }
+
+        Self::from_config_and_model(model_path, voices_path, cfg)
     }
 
     fn split_text_into_chunks(&self, text: &str, max_tokens: usize) -> Vec<String> {
